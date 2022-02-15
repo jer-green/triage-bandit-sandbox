@@ -5,6 +5,11 @@ from sklearn.datasets import make_classification
 from .io import save_samples
 
 
+def download_case_cards():
+    # just manually downloaded case cards for the moment
+    pass
+
+
 def download_data(count, n_dims, n_classes, outpath, name):
     """Download data set to the data folder for further usage"""
     dataset, ground_truth = make_classification(
@@ -30,5 +35,7 @@ def download_data(count, n_dims, n_classes, outpath, name):
 
     save_samples(dataset, ground_truth, outpath, name)
 
+
 if __name__ == "__main__":
-    download_data(1000, 25, 2, "data/raw/", "example")
+    # download_data(1000, 25, 2, "data/raw/", "example")
+    download_case_cards()
