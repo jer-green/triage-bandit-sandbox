@@ -1,0 +1,23 @@
+{
+    "name": "triage-bandit-sandbox",
+    "package": "triage_bandit_sandbox",
+    "predict": "triage_bandit_sandbox.predict:predict",
+    "bulk_storage_cache_uri": "s3://ai-platform-model-development/dvc_cache/",
+    "runner": "fastapi",
+    "repo": "",
+    "training": {
+        "orchestrator": "dvc",
+        "experiment_tracking_uri": "http://ec2-63-32-90-162.eu-west-1.compute.amazonaws.com:5000/",
+        "active_experiment_name": "first_experiment",
+        "local": {
+            "compute_orchestrator": "custom",
+            "operator": "custom",
+            "train_command": "sh pipeline.sh"
+        },
+        "cloud": {
+            "compute_orchestrator": "kubernetes_jobs",
+            "operator": "custom"
+            
+        }
+    }
+}

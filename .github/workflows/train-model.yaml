@@ -1,0 +1,122 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Train and publish metrics for triage-bandit-sandbox
+
+on:
+  push:
+
+env:
+  cml_version: 0.10.0
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # Runs the linter
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+
+    - uses: actions/checkout@v2
+
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+
+    - uses: syphar/restore-virtualenv@v1
+      id: cache-virtualenv-dev
+      with:
+        requirement_files: requirements-dev.txt  # this is optional
+        custom_cache_key_element: v2
+
+    - uses: syphar/restore-pip-download-cache@v1
+      if: steps.cache-virtualenv-dev.outputs.cache-hit != 'true'
+
+    - name: Install
+      if: steps.cache-virtualenv-dev.outputs.cache-hit != 'true'
+      env:
+        PIP_EXTRA_INDEX_URL: https://${{ secrets.ARTIFACTORY_USER }}:${{ secrets.ARTIFACTORY_PWD }}@artifactory.ops.babylontech.co.uk/artifactory/api/pypi/babylon-pypi/simple
+      run: |
+        pip install -r requirements-dev.txt
+
+    - name: Lint
+      run: |
+        make lint-check
+
+  # Creates venv
+  create-virtualenv:
+    runs-on: ubuntu-latest
+    steps:
+
+    - uses: actions/checkout@v2
+
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+
+    - uses: syphar/restore-virtualenv@v1
+      id: cache-virtualenv
+      with:
+        requirement_files: requirements.txt  # this is optional
+        custom_cache_key_element: v2
+
+    - uses: syphar/restore-pip-download-cache@v1
+      if: steps.cache-virtualenv.outputs.cache-hit != 'true'
+
+    - name: Install
+      if: steps.cache-virtualenv.outputs.cache-hit != 'true'
+      env:
+        PIP_EXTRA_INDEX_URL: https://${{ secrets.ARTIFACTORY_USER }}:${{ secrets.ARTIFACTORY_PWD }}@artifactory.ops.babylontech.co.uk/artifactory/api/pypi/babylon-pypi/simple
+        CREATE_VENV: "FALSE"
+      run: |
+        make install
+
+  # Retrains the model and pushes results and artefacts to trackers
+  train-model:
+    needs: create-virtualenv
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: write
+      id-token: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+
+      - uses: iterative/setup-cml@v1
+        with:
+          version: ${{ env.cml_version }}
+
+      - uses: syphar/restore-virtualenv@v1
+        id: cache-virtualenv
+        with:
+          requirement_files: requirements.txt  # this is optional
+          custom_cache_key_element: v2
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: eu-west-2
+          role-to-assume: arn:aws:iam::102743306802:role/dvc-pipeline
+
+      - name: DVC Pull
+        run: |
+          dvc pull
+
+      - name: Train model
+        env:
+          TRACKING_UPLOAD_MODEL: true
+          MLFLOW_S3_UPLOAD_EXTRA_ARGS: '{"ServerSideEncryption": "AES256"}'
+          CREATE_VENV: "FALSE"
+        run: |
+          pottery train
+
+      - name: Create CML report
+        env:
+          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          sh scripts/create_github_report.sh
+          cml send-comment report.md

@@ -1,0 +1,36 @@
+[build-system]
+requires = [ "poetry-core>=1.0.0",]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "triage-bandit-sandbox"
+version = "0.1.0"
+description = ""
+authors = []
+include = ["models"]
+
+[tool.poetry.dependencies]
+python = ">=3.8,<3.11"
+# Pottery requires this packaging constraint,
+# which is violated by installing some of the tools above.
+packaging = "<21.0,>=20.4"
+fastapi = "^0.73.0"
+uvicorn = "^0.17.0"
+pandas = "^1.4.0"
+# scikit-learn required for pre-installed demo model.
+# feel free to remove if you're adding a different model.
+scikit-learn = "^1.0.2"
+boto3 = "^1.20.24"
+dvc = {extras = ["s3"], version = "^2.9.3"}
+
+mlflow = "^1.23.1"
+
+
+[tool.poetry.dev-dependencies]
+autoimport = "^1.0.4"
+black = "^22.1.0"
+isort = "^5.10.1"
+flake8 = "^4.0.1"
+
+
+

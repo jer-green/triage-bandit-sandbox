@@ -1,0 +1,27 @@
+name: Publish wheel to Artifactory
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+      - v*
+jobs:
+  # NOTE: Build and publish can be separated into two separate steps, perhaps?
+  publish-wheel:
+    runs-on: ubuntu-latest
+    env:
+      ARTIFACTORY_PYPI_URL: ${{ secrets.ARTIFACTORY_PYPI_URL }}
+      ARTIFACTORY_PYPI_USER: ${{ secrets.ARTIFACTORY_PYPI_USER }}
+      ARTIFACTORY_PYPI_API_KEY: ${{ secrets.ARTIFACTORY_PYPI_API_KEY }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+
+      # NOTE: This should be done in a Docker executor context.
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+
+      - name: Bump and publish model
+        run: |
+          make publish
+
+      - run: echo "🍏 This job's status is ${{ job.status }}."

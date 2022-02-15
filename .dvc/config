@@ -1,0 +1,6 @@
+[core]
+    autostage = true
+    remote = s3
+['remote "s3"']
+    url = s3://ai-platform-model-development/dvc_cache/
+    sse = AES256

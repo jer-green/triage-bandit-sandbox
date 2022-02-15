@@ -1,0 +1,16 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {train_job_id}
+spec:
+  template:
+    spec:
+      containers:
+      - name: {train_job_name}
+        image: eu.gcr.io/dsap-dev-uk-ai-eng/{train_job_id}
+        command: ["pottery", "train"]
+        env:
+          - name: TRAINING_JOB_ID
+            value: "{train_job_id}"
+      restartPolicy: Never
+  backoffLimit: 0
